@@ -1,0 +1,25 @@
+{
+    "tables": {
+        "products": {
+            "columns": [
+                [
+                    "ID",
+                    "int"
+                ],
+                [
+                    "title",
+                    "str"
+                ],
+                [
+                    "price",
+                    "int"
+                ],
+                [
+                    "availability",
+                    "bool"
+                ]
+            ],
+            "data_file": "data/products.json"
+        }
+    }
+}
