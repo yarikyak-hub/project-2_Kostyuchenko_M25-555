@@ -2,7 +2,7 @@ import shlex
 from prettytable import PrettyTable
 from .utils import (load_metadata, save_metadata, create_table, drop_table, 
 load_table_data, save_table_data)
-from .core import insert, select, update, delete
+from .core import insert, select, update, delete, clear_select_cache
 from .parser import parse_where, parse_set
 
 
@@ -108,7 +108,7 @@ def run():
             table_name = args[1]
             columns_spec = args[2:]
             
-            # Парсим спецификации столбцов
+            # Парсим(извлекаем) спецификации столбцов
             columns = []
             for col_spec in columns_spec:
                 if ":" not in col_spec:
@@ -118,11 +118,12 @@ def run():
                 col_name, col_type = col_spec.split(":", 1)
                 columns.append((col_name, col_type))
             else:
-                # Все столбцы успешно распарсены
                 new_metadata = create_table(metadata, table_name, columns)
                 if new_metadata is not None:
-                    save_metadata(metadata_file, new_metadata)
-                    print("Метаданные сохранены в db_meta.json")
+                    if save_metadata(metadata_file, new_metadata):
+                        print("Метаданные сохранены в db_meta.json")
+                    else:
+                        print("Ошибка при сохранении метаданных")
                     
         elif command == "drop_table":
             if len(args) != 2:
@@ -132,9 +133,10 @@ def run():
             table_name = args[1]
             new_metadata = drop_table(metadata, table_name)
             if new_metadata is not None:
-                save_metadata(metadata_file, new_metadata)
-                print("Метаданные сохранены в db_meta.json")
-                
+                if save_metadata(metadata_file, new_metadata):
+                    print("Метаданные сохранены в db_meta.json")
+                else:
+                    print("Ошибка при сохранении метаданных")
         elif command == "insert":
             if len(args) < 3:
                 print("Ошибка: Используйте: insert <table_name> <value1>"
@@ -149,17 +151,11 @@ def run():
                 print(f"Ошибка: Таблица '{table_name}' не существует!")
                 continue
             
-            # Загружаем текущие данные таблицы
-            table_data = load_table_data(table_name, metadata)
-            
             # Вставляем запись
-            new_data = insert(metadata, table_name, values, table_data)
+            new_data = insert(metadata, table_name, values)
             if new_data is not None:
-                # Сохраняем измененные данные
-                if save_table_data(table_name, new_data, metadata):
-                    print("Данные сохранены")
-                else:
-                    print("Ошибка при сохранении данных")
+                clear_select_cache()
+                print("Данные успешно добавлены")
                 
         elif command == "select":
             if len(args) < 2:

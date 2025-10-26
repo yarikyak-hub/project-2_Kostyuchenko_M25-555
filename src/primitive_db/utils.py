@@ -26,12 +26,23 @@ def save_metadata(filepath, data):
     Сохраняет переданные данные в JSON-файл.
     """
     try:
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # Если filepath пустой, используем значение по умолчанию
+        if not filepath:
+            filepath = "db_meta.json"
+            print(f"Предупреждение: Путь к файлу пустой, используется '{filepath}'")
+        
+        # Создаем директорию, если она не существует (только если есть поддиректории)
+        directory = os.path.dirname(filepath)
+        if directory:  # Только если путь содержит директории
+            os.makedirs(directory, exist_ok=True)
+        
         with open(filepath, 'w', encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
+        print(f"Метаданные успешно сохранены в {filepath}")
+        return True
     except Exception as e:
         print(f"Ошибка при сохранении файла {filepath}: {e}")
-
+        return False
 
 @log_time
 @handle_db_errors
@@ -39,21 +50,16 @@ def create_table(metadata, table_name, columns):
     """
     Создает новую таблицу в метаданных.
     """
-    # Проверяем, существует ли уже таблица
     if "tables" in metadata and table_name in metadata["tables"]:
         raise KeyError(f"Таблица '{table_name}' уже существует!")
     
-    # Проверяем корректность типов данных
     allowed_types = {"int", "str", "bool"}
     for col_name, col_type in columns:
         if col_type not in allowed_types:
             raise ValueError(f"Недопустимый тип '{col_type}' для столбца '{col_name}'. "
                             f"Допустимые типы: {', '.join(allowed_types)}")
     
-    # Добавляем столбец ID:int в начало
     columns_with_id = [("ID", "int")] + columns
-    
-    # Создаем файл для данных таблицы
     data_dir = "data"
     data_file = f"{data_dir}/{table_name}.json"
     
@@ -82,7 +88,6 @@ def create_table(metadata, table_name, columns):
     print(f"Файл данных: {data_file}")
     
     return metadata
-
 
 @log_time
 @confirm_action("удаление таблицы")
@@ -126,16 +131,20 @@ def load_table_data(table_name, metadata):
     
     data_file = metadata["tables"][table_name]["data_file"]
     
+    # Проверяем существование файла
+    if not os.path.exists(data_file):
+        raise FileNotFoundError(f"Файл данных {data_file} не существует для таблицы '{table_name}'")
+    
     try:
         with open(data_file, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        print(f"Файл данных {data_file} не найден")
-        return []
+            data = json.load(file)
+            return data
     except json.JSONDecodeError as e:
         print(f"Ошибка декодирования JSON в файле {data_file}: {e}")
         return []
-
+    except Exception as e:
+        print(f"Неожиданная ошибка при загрузке файла {data_file}: {e}")
+        return []
 
 @log_time
 @handle_db_errors

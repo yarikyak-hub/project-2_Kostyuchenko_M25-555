@@ -8,3 +8,28 @@ __pycache__/
 .coverage
 # содержимое папки
 data/*.json
+
+# Database files (данные не должны быть в репозитории)
+data/
+db_meta.json
+
+# Asciinema recordings (демо-записи)
+*.cast
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Poetry
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+EOF

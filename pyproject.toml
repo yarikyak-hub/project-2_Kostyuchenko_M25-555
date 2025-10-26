@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "project-2-kostyuchenko-m25-555"
 version = "0.1.0"
-description = ""
+description = "Д/з № 2 Примитивная база данных"
 authors = ["Yarikyak <yarikyak@bk.ru>"]
 readme = "README.md"
 packages = [

@@ -1,10 +1,12 @@
 import time
+import functools
 
 
 def handle_db_errors(func):
     """
     Декоратор для обработки ошибок в функциях базы данных.
     """
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -28,6 +30,7 @@ def confirm_action(action_name):
     Декоратор для подтверждения опасных операций.
     """
     def decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             table_name = None
             if len(args) > 1:
@@ -54,6 +57,7 @@ def log_time(func):
     """
     Декоратор для замера времени выполнения функции.
     """
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.monotonic()
         result = func(*args, **kwargs)

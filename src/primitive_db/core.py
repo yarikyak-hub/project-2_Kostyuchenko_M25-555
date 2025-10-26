@@ -54,36 +54,40 @@ def insert(metadata, table_name, values):
     if len(values) != expected_count:
         raise ValueError(f"Ожидалось {expected_count} значений, получено {len(values)}")
     
-    from .utils import load_table_data
+    # Загружаем текущие данные таблицы
+    from .utils import load_table_data, save_table_data
     table_data = load_table_data(table_name, metadata)
-    if not table_data and table_data is not None:
-        raise FileNotFoundError(f"Не удалось загрузить данные таблицы '{table_name}'")
     
+    # Генерируем новый ID
     if table_data:
         max_id = max(record.get("ID", 0) for record in table_data)
         new_id = max_id + 1
     else:
         new_id = 1
     
+    # Создаем новую запись
     new_record = {"ID": new_id}
     
-    for i, (col_name, col_type) in enumerate(columns[1:]):
+    # Валидируем и добавляем значения
+    for i, (col_name, col_type) in enumerate(columns[1:]):  # Пропускаем ID
         value = values[i]
         
+        # Валидация типа
         if not validate_value(value, col_type):
             raise ValueError(f"Неверный тип для столбца '{col_name}'. Ожидается {col_type}")
         
+        # Конвертируем значение
         new_record[col_name] = convert_value(value, col_type)
     
+    # Добавляем запись в данные
     table_data.append(new_record)
     
-    from .utils import save_table_data
+    # Сохраняем данные
     if save_table_data(table_name, table_data, metadata):
         print(f"Запись успешно добавлена в таблицу '{table_name}' с ID={new_id}")
         return table_data
     else:
         raise Exception("Ошибка при сохранении данных")
-
 
 def _select_uncached(table_data, where_clause=None):
     """
