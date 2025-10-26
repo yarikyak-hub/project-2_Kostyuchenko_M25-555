@@ -1,8 +1,14 @@
 import json
 import os
+from .decorators import handle_db_errors, confirm_action, log_time
 
 
+@log_time
+@handle_db_errors
 def load_metadata(filepath):
+    """
+    Загружает данные из JSON-файла.
+    """
     try:
         with open(filepath, 'r', encoding='utf-8') as file:
             return json.load(file)
@@ -11,30 +17,38 @@ def load_metadata(filepath):
     except json.JSONDecodeError as e:
         print(f"Ошибка декодирования JSON в файле {filepath}: {e}")
         return {}
-    except Exception as e:
-        print(f"Неожиданная ошибка при загрузке файла {filepath}: {e}")
-        return {}
 
+
+@log_time
+@handle_db_errors
 def save_metadata(filepath, data):
+    """
+    Сохраняет переданные данные в JSON-файл.
+    """
     try:
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, 'w', encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
     except Exception as e:
         print(f"Ошибка при сохранении файла {filepath}: {e}")
 
+
+@log_time
+@handle_db_errors
 def create_table(metadata, table_name, columns):
-# Проверяем, существует ли уже таблица
+    """
+    Создает новую таблицу в метаданных.
+    """
+    # Проверяем, существует ли уже таблица
     if "tables" in metadata and table_name in metadata["tables"]:
-        print(f"Ошибка: Таблица '{table_name}' уже существует!")
-        return None
+        raise KeyError(f"Таблица '{table_name}' уже существует!")
     
     # Проверяем корректность типов данных
     allowed_types = {"int", "str", "bool"}
     for col_name, col_type in columns:
         if col_type not in allowed_types:
-            print(f"Ошибка: Недопустимый тип '{col_type}' для столбца '{col_name}'. "
-                  f"Допустимые типы: {', '.join(allowed_types)}")
-            return None
+            raise ValueError(f"Недопустимый тип '{col_type}' для столбца '{col_name}'. "
+                            f"Допустимые типы: {', '.join(allowed_types)}")
     
     # Добавляем столбец ID:int в начало
     columns_with_id = [("ID", "int")] + columns
@@ -51,8 +65,7 @@ def create_table(metadata, table_name, columns):
         with open(data_file, 'w', encoding='utf-8') as file:
             json.dump([], file, ensure_ascii=False, indent=2)
     except Exception as e:
-        print(f"Ошибка при создании файла данных {data_file}: {e}")
-        return None
+        raise Exception(f"Ошибка при создании файла данных {data_file}: {e}")
     
     # Инициализируем структуру таблиц, если её нет
     if "tables" not in metadata:
@@ -70,11 +83,17 @@ def create_table(metadata, table_name, columns):
     
     return metadata
 
+
+@log_time
+@confirm_action("удаление таблицы")
+@handle_db_errors
 def drop_table(metadata, table_name):
- # Проверяем существование таблицы
+    """
+    Удаляет таблицу из метаданных.
+    """
+    # Проверяем существование таблицы
     if "tables" not in metadata or table_name not in metadata["tables"]:
-        print(f"Ошибка: Таблица '{table_name}' не существует!")
-        return None
+        raise KeyError(f"Таблица '{table_name}' не существует!")
     
     # Удаляем файл с данными
     data_file = metadata["tables"][table_name]["data_file"]
@@ -95,10 +114,15 @@ def drop_table(metadata, table_name):
     print(f"Таблица '{table_name}' успешно удалена!")
     return metadata
 
+
+@log_time
+@handle_db_errors
 def load_table_data(table_name, metadata):
+    """
+    Загружает данные таблицы из файла.
+    """
     if "tables" not in metadata or table_name not in metadata["tables"]:
-        print(f"Ошибка: Таблица '{table_name}' не существует!")
-        return []
+        raise KeyError(f"Таблица '{table_name}' не существует!")
     
     data_file = metadata["tables"][table_name]["data_file"]
     
@@ -111,14 +135,16 @@ def load_table_data(table_name, metadata):
     except json.JSONDecodeError as e:
         print(f"Ошибка декодирования JSON в файле {data_file}: {e}")
         return []
-    except Exception as e:
-        print(f"Неожиданная ошибка при загрузке файла {data_file}: {e}")
-        return []
 
+
+@log_time
+@handle_db_errors
 def save_table_data(table_name, data, metadata):
+    """
+    Сохраняет данные таблицы в файл.
+    """
     if "tables" not in metadata or table_name not in metadata["tables"]:
-        print(f"Ошибка: Таблица '{table_name}' не существует!")
-        return False
+        raise KeyError(f"Таблица '{table_name}' не существует!")
     
     data_file = metadata["tables"][table_name]["data_file"]
     
@@ -127,5 +153,4 @@ def save_table_data(table_name, data, metadata):
             json.dump(data, file, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
-        print(f"Ошибка при сохранении файла данных {data_file}: {e}")
-        return False
+        raise Exception(f"Ошибка при сохранении файла данных {data_file}: {e}")

@@ -1,6 +1,6 @@
 {
     "tables": {
-        "products": {
+        "clothes": {
             "columns": [
                 [
                     "ID",
@@ -11,15 +11,23 @@
                     "str"
                 ],
                 [
+                    "size",
+                    "int"
+                ],
+                [
                     "price",
                     "int"
+                ],
+                [
+                    "color",
+                    "str"
                 ],
                 [
                     "availability",
                     "bool"
                 ]
             ],
-            "data_file": "data/products.json"
+            "data_file": "data/clothes.json"
         }
     }
 }
